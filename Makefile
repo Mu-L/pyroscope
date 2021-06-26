@@ -87,6 +87,10 @@ embedded-assets: install-dev-tools $(shell echo $(EMBEDDED_ASSETS_DEPS))
 lint:
 	go run "$(shell scripts/pinned-tool.sh github.com/mgechev/revive)" -config revive.toml -exclude ./pkg/agent/pprof/... -exclude ./vendor/... -formatter stylish ./...
 
+.PHONY: lint-summary
+lint-summary:
+	$(MAKE) lint | grep 'https://revive.run' | sed 's/[ ()0-9,]*//' | sort
+
 .PHONY: ensure-logrus-not-used
 ensure-logrus-not-used:
 	@! go run "$(shell scripts/pinned-tool.sh github.com/kisielk/godepgraph)" -nostdlib -s ./pkg/agent/profiler/ | grep ' -> "github.com/sirupsen/logrus' \
@@ -120,11 +124,15 @@ clean:
 
 .PHONY: update-contributors
 update-contributors:
-	$(shell yarn bin contributor-faces) .
+	$(shell yarn bin contributor-faces) \
+		-e pyroscopebot \
+		.
 
 .PHONY: update-changelog
 update-changelog:
 	$(shell yarn bin conventional-changelog) -i CHANGELOG.md -s
+	sed -i '' '/Updates the list of contributors in README/d' CHANGELOG.md
+	sed -i '' '/Update README.md/d' CHANGELOG.md
 
 .PHONY: update-protobuf
 update-protobuf:
